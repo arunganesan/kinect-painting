@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -85,9 +85,30 @@ namespace ColorLabeling
                 }
             }
 
-            // Test: Michael
-            // Populate bitmapBits with 255
-            for (int i = 0; i < _colorPixels.Length; i++) _bitmapBits[i] = 255;
+            // Maximum short = 32767
+            // Minimum short = 0 ...
+
+            //for (int i = 0; i < _colorPixels.Length; i++) _bitmapBits[i] = 255;
+            // Draw the un-mapped depth image
+            /*
+            for (int i = 0; i < _depthPixels.Length; i++)
+            {
+                //Console.WriteLine(_depthPixels[i]);
+                int threshold = 10000;
+                if (_depthPixels[i] < threshold)
+                {
+                    //_bitmapBits[4 * i] = _bitmapBits[4 * i + 1] = _bitmapBits[4 * i + 2] = _bitmapBits[4 * i + 3] = (byte)(255 * (threshold - _depthPixels[i]) / threshold);
+                    _bitmapBits[4 * i] = _colorPixels[4 * i];
+                    _bitmapBits[4 * i + 1] = _colorPixels[4 * i + 1];
+                    _bitmapBits[4 * i + 2] = _colorPixels[4 * i + 2];
+                    _bitmapBits[4 * i + 3] = _colorPixels[4 * i + 3];
+
+                }
+                else
+                    _bitmapBits[4 * i] = _bitmapBits[4 * i + 1] = _bitmapBits[4 * i + 2] = _bitmapBits[4 * i + 3] = (byte)255;
+
+            }
+            */
 
             /*
             // Put the color image into _bitmapBits
@@ -100,13 +121,10 @@ namespace ColorLabeling
             }
             */
 
+            
             this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mappedDepthLocations);
             
-            // Depth map in _mappedDepthLocations
-            // Color map in _colorPixels
-            
-            // Classify each pixel as one of a finite set of colors 
-            // And only applying this on nearby items
+
             for (int i = 0; i < _depthPixels.Length; i++)
             {
                 int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
@@ -115,7 +133,8 @@ namespace ColorLabeling
                 if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
                 {
                     int baseIndex = (point.Y * 640 + point.X) * 4;
-                    if ((depthVal <= 1000) && (depthVal > 400))
+                    //if ((depthVal <= 1000) && (depthVal > 400))
+                    if ((depthVal <= 2000) && (depthVal > 800))
                     {
                         // Bucketing for speeding it up a little bit.
                         /*

@@ -1,0 +1,5 @@
+ColorGlove/bin/*
+ColorGlove/bin/Debug/*
+
+*.exe
+*.pdb

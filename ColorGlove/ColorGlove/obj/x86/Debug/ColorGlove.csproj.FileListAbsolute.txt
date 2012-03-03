@@ -1,0 +1,13 @@
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\ResolveAssemblyReference.cache
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\MainWindow.baml
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\MainWindow.g.cs
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\App.g.cs
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\ColorGlove_MarkupCompile.cache
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\ColorGlove.g.resources
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\ColorGlove.Properties.Resources.resources
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\GenerateResource.read.1.tlog
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\GenerateResource.write.1.tlog
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\bin\Debug\ColorGlove.exe
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\bin\Debug\ColorGlove.pdb
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\ColorGlove.exe
+C:\cygwin\home\Arun\EECS-582\ColorGlove\ColorGlove\obj\x86\Debug\ColorGlove.pdb

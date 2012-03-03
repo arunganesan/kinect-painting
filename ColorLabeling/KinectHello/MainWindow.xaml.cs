@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,6 +27,8 @@ namespace ColorLabeling
     /// </summary>
     public partial class MainWindow : Window
     {
+
+        #region Variables
         private KinectSensor _sensor;
         private WriteableBitmap _bitmap;
         private byte[] _bitmapBits;
@@ -34,7 +36,9 @@ namespace ColorLabeling
         private byte[] _colorPixels = new byte[0];
         private short[] _depthPixels = new short[0];
         private Dictionary<byte[], byte[]> nearest_cache = new Dictionary<byte[], byte[]>();
+        #endregion
 
+        #region Kinect setup functions
         private void SetSensor(KinectSensor newSensor)
         {
             if (_sensor != null) _sensor.Stop();
@@ -48,6 +52,21 @@ namespace ColorLabeling
                 _sensor.Start();
             }
         }
+
+        public MainWindow()
+        {
+            InitializeComponent();
+
+            KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
+            {
+                if (e.Sensor == _sensor && e.Status != KinectStatus.Connected) SetSensor(null);
+                else if ((_sensor == null) && (e.Status == KinectStatus.Connected)) SetSensor(e.Sensor);
+            };
+
+            foreach (var sensor in KinectSensor.KinectSensors)
+                if (sensor.Status == KinectStatus.Connected) SetSensor(sensor);
+        }
+
 
         void _sensor_AllFramesReady(object sender, AllFramesReadyEventArgs e)
         {
@@ -85,45 +104,37 @@ namespace ColorLabeling
                 }
             }
 
-            // Maximum short = 32767
-            // Minimum short = 0 ...
+            process_data();
 
-            //for (int i = 0; i < _colorPixels.Length; i++) _bitmapBits[i] = 255;
-            // Draw the un-mapped depth image
-            /*
+            _bitmap.WritePixels(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight), _bitmapBits, _bitmap.PixelWidth * sizeof(int), 0);
+       
+        }
+        #endregion
+        
+        // Entry point into custom data processing function
+        void process_data()
+        {
+            //display_only_depth();
+            display_only_mapped();
+            //rgb_on_mapped();
+            //color_mapped();
+        }
+
+        void display_only_depth()
+        {
             for (int i = 0; i < _depthPixels.Length; i++)
             {
                 //Console.WriteLine(_depthPixels[i]);
                 int threshold = 10000;
-                if (_depthPixels[i] < threshold)
-                {
-                    //_bitmapBits[4 * i] = _bitmapBits[4 * i + 1] = _bitmapBits[4 * i + 2] = _bitmapBits[4 * i + 3] = (byte)(255 * (threshold - _depthPixels[i]) / threshold);
-                    _bitmapBits[4 * i] = _colorPixels[4 * i];
-                    _bitmapBits[4 * i + 1] = _colorPixels[4 * i + 1];
-                    _bitmapBits[4 * i + 2] = _colorPixels[4 * i + 2];
-                    _bitmapBits[4 * i + 3] = _colorPixels[4 * i + 3];
-
-                }
-                else
-                    _bitmapBits[4 * i] = _bitmapBits[4 * i + 1] = _bitmapBits[4 * i + 2] = _bitmapBits[4 * i + 3] = (byte)255;
-
+                if (_depthPixels[i] < threshold) _bitmapBits[4 * i] = _bitmapBits[4 * i + 1] = _bitmapBits[4 * i + 2] = _bitmapBits[4 * i + 3] = (byte)(255 * (threshold - _depthPixels[i]) / threshold);
+                else _bitmapBits[4 * i] = _bitmapBits[4 * i + 1] = _bitmapBits[4 * i + 2] = _bitmapBits[4 * i + 3] = (byte)255;
             }
-            */
 
-            /*
-            // Put the color image into _bitmapBits
-            for (int i = 0; i < _colorPixels.Length; i += 4)
-            {
-                _bitmapBits[i + 3] = 255;
-                _bitmapBits[i + 2] = _colorPixels[i + 2];
-                _bitmapBits[i + 1] = _colorPixels[i + 1];
-                _bitmapBits[i] = _colorPixels[i];
-            }
-            */
+        }
 
-            
+        void display_only_mapped()
+        { 
             this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mappedDepthLocations);
-            
 
             for (int i = 0; i < _depthPixels.Length; i++)
             {
@@ -133,36 +144,75 @@ namespace ColorLabeling
                 if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
                 {
                     int baseIndex = (point.Y * 640 + point.X) * 4;
-                    //if ((depthVal <= 1000) && (depthVal > 400))
-                    if ((depthVal <= 2000) && (depthVal > 800))
+                    int upper = 2000, lower = 400;
+                    if ((depthVal <= upper) && (depthVal > lower)) _bitmapBits[baseIndex] = _bitmapBits[baseIndex + 1] = _bitmapBits[baseIndex + 2] = (byte)(255*(upper - depthVal)/upper);
+                    else _bitmapBits[baseIndex] = _bitmapBits[baseIndex + 1] = _bitmapBits[baseIndex + 2] = (byte)255;
+                }
+            }
+        }
+
+        void rgb_on_mapped()
+        {
+            this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mappedDepthLocations);
+
+            for (int i = 0; i < _depthPixels.Length; i++)
+            {
+                int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+
+                ColorImagePoint point = _mappedDepthLocations[i];
+                if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+                {
+                    int baseIndex = (point.Y * 640 + point.X) * 4;
+                    int upper = 1000, lower = 400;
+                    if ((depthVal <= upper) && (depthVal > lower))
                     {
-                        // Bucketing for speeding it up a little bit.
-                        /*
-                        byte[] color = new byte[3] { (byte)((int)(_colorPixels[baseIndex + 2]/10)*10), 
-                                                    (byte)((int)(_colorPixels[baseIndex + 1]/10)*10), 
-                                                    (byte)((int)(_colorPixels[baseIndex]/10)*10) };
-                        byte[] colorMatch = nearest_color(color);
-                        
-                        _bitmapBits[baseIndex] = colorMatch[2];
-                        _bitmapBits[baseIndex + 1] = colorMatch[1];
-                        _bitmapBits[baseIndex + 2] = colorMatch[0];
-                        */
 
                         _bitmapBits[baseIndex] = _colorPixels[baseIndex];
                         _bitmapBits[baseIndex + 1] = _colorPixels[baseIndex + 1];
                         _bitmapBits[baseIndex + 2] = _colorPixels[baseIndex + 2];
 
-                        //_bitmapBits[baseIndex] = _bitmapBits[baseIndex + 1] = _bitmapBits[baseIndex + 2] = (byte)depthVal;
-                    } else {
-                        _bitmapBits[baseIndex] = _bitmapBits[baseIndex + 1] = _bitmapBits[baseIndex + 2] = (byte)255;
                     }
+                    else _bitmapBits[baseIndex] = _bitmapBits[baseIndex + 1] = _bitmapBits[baseIndex + 2] = (byte)255;
                 }
             }
 
-            _bitmap.WritePixels(new Int32Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight), _bitmapBits, _bitmap.PixelWidth * sizeof(int), 0);
-        
         }
 
+        void color_mapped()
+        {
+            this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mappedDepthLocations);
+
+            for (int i = 0; i < _depthPixels.Length; i++)
+            {
+                int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+
+                ColorImagePoint point = _mappedDepthLocations[i];
+                if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+                {
+                    int baseIndex = (point.Y * 640 + point.X) * 4;
+                    int upper = 2000, lower = 400;
+                    if ((depthVal <= upper) && (depthVal > lower))
+                    {
+                        // Bucketing for speeding it up a little bit.
+                        
+                        byte[] color = new byte[3] { (byte)((int)(_colorPixels[baseIndex + 2]/10)*10), 
+                                                    (byte)((int)(_colorPixels[baseIndex + 1]/10)*10), 
+                                                    (byte)((int)(_colorPixels[baseIndex]/10)*10) };
+                        //byte[] colorMatch = nearest_color(color);
+                        byte[] colorMatch = color;
+
+                        _bitmapBits[baseIndex] = colorMatch[2];
+                        _bitmapBits[baseIndex + 1] = colorMatch[1];
+                        _bitmapBits[baseIndex + 2] = colorMatch[0];
+                    }
+
+                    else _bitmapBits[baseIndex] = _bitmapBits[baseIndex + 1] = _bitmapBits[baseIndex + 2] = (byte)255;
+                }
+            }
+
+        }
+
+        #region Color matching
         byte[] nearest_color(byte[] point)
         {
             if (nearest_cache.ContainsKey(point)) return nearest_cache[point];
@@ -198,19 +248,8 @@ namespace ColorLabeling
         {
             return Math.Sqrt(Math.Pow(point[0] - color[0], 2) + Math.Pow(point[1] - color[1], 2) + Math.Pow(point[2] - color[2], 2));
         }
+        #endregion
 
-        public MainWindow()
-        {
-            InitializeComponent();
 
-            KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
-            {
-                if (e.Sensor == _sensor && e.Status != KinectStatus.Connected) SetSensor(null);
-                else if ((_sensor == null) && (e.Status == KinectStatus.Connected)) SetSensor(e.Sensor);
-            };
-
-            foreach (var sensor in KinectSensor.KinectSensors) 
-                if (sensor.Status == KinectStatus.Connected) SetSensor(sensor);    
-        }
     }
 }

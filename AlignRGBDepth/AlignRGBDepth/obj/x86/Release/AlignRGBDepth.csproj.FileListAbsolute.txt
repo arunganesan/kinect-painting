@@ -13,3 +13,5 @@ C:\Users\Michael Zhang\Dropbox\Kinect\AlignRGBDepth\AlignRGBDepth\obj\x86\Releas
 C:\Users\Michael Zhang\Dropbox\Kinect\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.pdb
 C:\cygwin\home\Arun\EECS582\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.exe
 C:\cygwin\home\Arun\EECS582\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.pdb
+C:\cygwin\home\Arun\EECS-582\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.exe
+C:\cygwin\home\Arun\EECS-582\AlignRGBDepth\AlignRGBDepth\obj\x86\Release\AlignRGBDepth.pdb

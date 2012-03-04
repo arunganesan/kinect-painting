@@ -1,5 +1,6 @@
 ColorGlove/bin/*
 ColorGlove/bin/Debug/*
+ColorGlove/obj/x86/Debug/*
 
 *.exe
 *.pdb

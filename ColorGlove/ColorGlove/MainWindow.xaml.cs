@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Documents;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Input;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
@@ -65,16 +65,19 @@ namespace ColorGlove
                 else if (RGBModeValue == RGBModeFormat.RgbResolution640x480Fps30)
                     _sensor.ColorStream.Enable(ColorImageFormat.RgbResolution640x480Fps30);
                 
-                _sensor.DepthStream.Enable(DepthImageFormat.Resolution640x480Fps30);                
-                if (RangeModeValue == RangeModeFormat.Near)
-                    _sensor.DepthStream.Range = DepthRange.Near; // set near mode 
+                _sensor.DepthStream.Enable(DepthImageFormat.Resolution640x480Fps30);
+
+                // Commented out for XBox Kinecst
+                //if (RangeModeValue == RangeModeFormat.Near)
+                //    _sensor.DepthStream.Range = DepthRange.Near; // set near mode 
+                
                 _sensor.AllFramesReady += _sensor_AllFramesReady; // Register event
                 _sensor.Start();
             }
         }
 
         public MainWindow()
-        {
+        {   
             InitializeComponent();
 
             KinectSensor.KinectSensors.StatusChanged += (object sender, StatusChangedEventArgs e) =>
@@ -83,8 +86,10 @@ namespace ColorGlove
                 else if ((_sensor == null) && (e.Status == KinectStatus.Connected)) SetSensor(e.Sensor);
             };
 
+
             foreach (var sensor in KinectSensor.KinectSensors)
                 if (sensor.Status == KinectStatus.Connected) SetSensor(sensor);
+
         }
 
 
@@ -145,8 +150,8 @@ namespace ColorGlove
         }
 
         void display_only_depth(int display)
-        // with thresholding, uninteresting region will be white.
         {
+            // with thresholding, uninteresting region will be white.
             for (int i = 0; i < _depthPixels.Length; i++)
             {
                 //Console.WriteLine(_depthPixels[i]);

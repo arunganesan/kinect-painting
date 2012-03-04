@@ -48,7 +48,9 @@ namespace ColorGlove
             Defalut = 0, // If you're using Kinect Xbox you should use Default
             Near = 1,
         };
-        private RGBModeFormat RGBModeValue = RGBModeFormat.RgbResolution640x480Fps30;
+
+        private RGBModeFormat RGBModeValue = RGBModeFormat.YuvResolution640x480Fps15;
+        //private RGBModeFormat RGBModeValue = RGBModeFormat.RgbResolution640x480Fps30;
         private RangeModeFormat RangeModeValue = RangeModeFormat.Near;
         #endregion
 
@@ -156,125 +158,13 @@ namespace ColorGlove
             _bitmapBits[display] = _colorPixels;
         }
 
-        void display_only_depth(int display)
-        {
-            // with thresholding, uninteresting region will be white.
-            for (int i = 0; i < _depthPixels.Length; i++)
-            {
-                //Console.WriteLine(_depthPixels[i]);
-                
-                //Debug.WriteLine(depthVal);
-                if (_depthPixels[i] < threshold) _bitmapBits[display][4 * i] = 
-                                                _bitmapBits[display][4 * i + 1] =
-                                                _bitmapBits[display][4 * i + 2] =
-                                                _bitmapBits[display][4 * i + 3] = (byte)(255 * (threshold - _depthPixels[i]) / threshold);
-                else _bitmapBits[display][4 * i] =
-                    _bitmapBits[display][4 * i + 1] =
-                    _bitmapBits[display][4 * i + 2] =
-                    _bitmapBits[display][4 * i + 3] = (byte)255;
-            }
-
-        }
-
-        void display_only_mapped(int display)
-        {
-            if (RGBModeValue == RGBModeFormat.YuvResolution640x480Fps15)
-                this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mappedDepthLocations);
-            else if (RGBModeValue == RGBModeFormat.RgbResolution640x480Fps30)
-                this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.RgbResolution640x480Fps30, _mappedDepthLocations);
-           
-
-            for (int i = 0; i < _depthPixels.Length; i++)
-            {
-                int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-
-                ColorImagePoint point = _mappedDepthLocations[i];
-                if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
-                {
-                    int baseIndex = (point.Y * 640 + point.X) * 4;
-                    if ((depthVal <= upper) && (depthVal > lower)) 
-                        _bitmapBits[display][baseIndex] =
-                        _bitmapBits[display][baseIndex + 1] =
-                        _bitmapBits[display][baseIndex + 2] = (byte)(255 * (upper - depthVal) / upper);
-                    else _bitmapBits[display][baseIndex] = _bitmapBits[display][baseIndex + 1] = _bitmapBits[display][baseIndex + 2] = (byte)255;
-                }
-            }
-        }
-
-        void rgb_on_mapped(int display)
-        {
-            if (RGBModeValue == RGBModeFormat.YuvResolution640x480Fps15)
-                this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mappedDepthLocations);
-            else if (RGBModeValue == RGBModeFormat.RgbResolution640x480Fps30)
-                this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.RgbResolution640x480Fps30, _mappedDepthLocations);
-
-
-            for (int i = 0; i < _depthPixels.Length; i++)
-            {
-                int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
-
-                ColorImagePoint point = _mappedDepthLocations[i];
-                if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
-                {
-                    int baseIndex = (point.Y * 640 + point.X) * 4;
-                    if ((depthVal <= upper) && (depthVal > lower))
-                    {
-
-                        _bitmapBits[display][baseIndex] = _colorPixels[baseIndex];
-                        _bitmapBits[display][baseIndex + 1] = _colorPixels[baseIndex + 1];
-                        _bitmapBits[display][baseIndex + 2] = _colorPixels[baseIndex + 2];
-
-                    }
-                    else _bitmapBits[display][baseIndex] = _bitmapBits[display][baseIndex + 1] = _bitmapBits[display][baseIndex + 2] = (byte)255;
-                }
-            }
-
-        }
-
-        void color_mapped(int display)
-        {
-            Debug.Assert(_bitmapBits[display].Length == _colorPixels.Length);
-            for (int i = 0; i < _colorPixels.Length; i += 4) // need to do the copy before MapDepthToColor
-            {
-                _bitmapBits[display][i + 3] = 255;
-                _bitmapBits[display][i + 2] = _colorPixels[i + 2];
-                _bitmapBits[display][i + 1] = _colorPixels[i + 1];
-                _bitmapBits[display][i] = _colorPixels[i];                    
-            }
-            
-            if (RGBModeValue == RGBModeFormat.YuvResolution640x480Fps15)
-                this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mappedDepthLocations);
-            else if (RGBModeValue == RGBModeFormat.RgbResolution640x480Fps30)
-                this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.RgbResolution640x480Fps30, _mappedDepthLocations);
-            Debug.Assert(RGBModeValue == RGBModeFormat.RgbResolution640x480Fps30);
-            Array.Clear(_usedcolorPixels, 0, _usedcolorPixels.Length);
-            
-            for (int i = 0; i < _depthPixels.Length; i++)
-            {
-                int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;                       
-                if ((depthVal <= upper) && (depthVal > lower))
-                {
-                    ColorImagePoint point = _mappedDepthLocations[i];
-                    if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
-                    {
-                        int baseIndex = (point.Y * 640 + point.X) * 4;
-                        _usedcolorPixels[baseIndex] = 1;                        
-                    }
-                }
-            }
-            
-            for (int i = 0; i < _bitmapBits[display].Length; i += 4)
-                if (_usedcolorPixels[i] == 0)
-                {
-                    _bitmapBits[display][i] = (byte)(255);
-                    _bitmapBits[display][i + 1] = (byte)(255);
-                    _bitmapBits[display][i + 2] = (byte)(255);                    
-                }
-        }
 
         void color_matched(int display)
         {
             this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mappedDepthLocations);
+
+            //_bitmapBits[display] = Enumerable.Repeat((byte)0, _colorPixels.Length).ToArray();
+
             for (int i = 0; i < _depthPixels.Length; i++)
             {
                 int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
@@ -284,9 +174,16 @@ namespace ColorGlove
                     if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
                     {
                         int baseIndex = (point.Y * 640 + point.X) * 4;
-                        _bitmapBits[display][baseIndex] = (byte)255;
-                        _bitmapBits[display][baseIndex + 1] = (byte)255;
-                        _bitmapBits[display][baseIndex + 2] = (byte)255;
+
+                        byte[] colorMatch = nearest_color(new byte[] { _colorPixels[baseIndex + 2], _colorPixels[baseIndex + 1], _colorPixels[baseIndex] });
+
+                        _bitmapBits[display][baseIndex] = colorMatch[2];
+                        _bitmapBits[display][baseIndex + 1] = colorMatch[1];
+                        _bitmapBits[display][baseIndex + 2] = colorMatch[0];
+
+                        //_bitmapBits[display][baseIndex] = (byte)255;
+                        //_bitmapBits[display][baseIndex + 1] = (byte)255;
+                        //_bitmapBits[display][baseIndex + 2] = (byte)255;
 
                         //_bitmapBits[display][baseIndex] = _colorPixels[baseIndex];
                         //_bitmapBits[display][baseIndex + 1] = _colorPixels[baseIndex + 1];
@@ -308,6 +205,14 @@ namespace ColorGlove
               {55, 90, 70},      // Green
               {115, 30, 100}     // Pink
             };
+
+            byte[,] replacement = new byte[,] {
+              {255, 255, 255},   // White  
+              {0, 0, 255},      // Blue
+              {0, 255, 0},      // Green
+              {255, 0, 0}     // Pink
+            };
+
 
             /*byte[,] colors = new byte[,] { 
             { 255, 0, 0 }, 
@@ -334,7 +239,7 @@ namespace ColorGlove
                 }
             }
 
-            return new byte[] { colors[minColor, 0], colors[minColor, 1], colors[minColor, 2] };
+            return new byte[] { replacement[minColor, 0], replacement[minColor, 1], replacement[minColor, 2] };
         }
 
         double euc_distance(byte[] point, byte[] color)

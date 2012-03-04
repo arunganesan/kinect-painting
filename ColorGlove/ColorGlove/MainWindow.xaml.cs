@@ -143,10 +143,17 @@ namespace ColorGlove
         // Entry point into custom data processing function
         void process_data()
         {
+            regular_rgb(0);
             //display_only_depth(0);
             //display_only_mapped(1);
             //rgb_on_mapped(0);
-            color_mapped(1);
+            //color_mapped(1);
+            color_matched(1);
+        }
+
+        void regular_rgb(int display)
+        {
+            _bitmapBits[display] = _colorPixels;
         }
 
         void display_only_depth(int display)
@@ -263,7 +270,30 @@ namespace ColorGlove
                     _bitmapBits[display][i + 1] = (byte)(255);
                     _bitmapBits[display][i + 2] = (byte)(255);                    
                 }
+        }
 
+        void color_matched(int display)
+        {
+            this._sensor.MapDepthFrameToColorFrame(DepthImageFormat.Resolution640x480Fps30, _depthPixels, ColorImageFormat.YuvResolution640x480Fps15, _mappedDepthLocations);
+            for (int i = 0; i < _depthPixels.Length; i++)
+            {
+                int depthVal = _depthPixels[i] >> DepthImageFrame.PlayerIndexBitmaskWidth;
+                if ((depthVal <= upper) && (depthVal > lower))
+                {
+                    ColorImagePoint point = _mappedDepthLocations[i];
+                    if ((point.X >= 0 && point.X < 640) && (point.Y >= 0 && point.Y < 480))
+                    {
+                        int baseIndex = (point.Y * 640 + point.X) * 4;
+                        _bitmapBits[display][baseIndex] = (byte)255;
+                        _bitmapBits[display][baseIndex + 1] = (byte)255;
+                        _bitmapBits[display][baseIndex + 2] = (byte)255;
+
+                        //_bitmapBits[display][baseIndex] = _colorPixels[baseIndex];
+                        //_bitmapBits[display][baseIndex + 1] = _colorPixels[baseIndex + 1];
+                        //_bitmapBits[display][baseIndex + 2] = _colorPixels[baseIndex + 2];
+                    }
+                }
+            }
         }
 
         #region Color matching
@@ -271,7 +301,15 @@ namespace ColorGlove
         {
             if (nearest_cache.ContainsKey(point)) return nearest_cache[point];
 
-            byte[,] colors = new byte[,] { 
+            // More realistic colors sampled from the camera
+            byte[,] colors = new byte[,] {
+              {140, 140, 140},   // White  
+              {30, 30, 85},      // Blue
+              {55, 90, 70},      // Green
+              {115, 30, 100}     // Pink
+            };
+
+            /*byte[,] colors = new byte[,] { 
             { 255, 0, 0 }, 
             { 0, 255, 0 }, 
             { 0, 0, 255 },
@@ -279,7 +317,7 @@ namespace ColorGlove
             { 139, 10, 80 },                // Pink
             { 255, 255, 0 },                // Yellow
             { 205, 102, 0 }                 // Orange
-            };
+            };*/
             //double [] distances = new double [colors.GetLength(0)];
 
             //int minIdx = 0;
@@ -305,6 +343,19 @@ namespace ColorGlove
         }
         #endregion
 
+        private void image1_click(object sender, MouseButtonEventArgs e)
+        {
+            Point click_position = e.GetPosition(image1);
+            int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
+            Console.WriteLine("RGB: (" + _colorPixels[baseIndex + 2] + ", " + _colorPixels[baseIndex + 1] + ", " + _colorPixels[baseIndex] + ")");
+        }
+
+        private void image2_click(object sender, MouseButtonEventArgs e)
+        {
+            Point click_position = e.GetPosition(image1);
+            int baseIndex = ((int)click_position.Y * 640 + (int)click_position.X) * 4;
+            Console.WriteLine("RGB: (" + _colorPixels[baseIndex + 2] + ", " + _colorPixels[baseIndex + 1] + ", " + _colorPixels[baseIndex] + ")");
+        }
 
     }
 }
